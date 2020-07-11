@@ -1,8 +1,8 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.DaoProviderFactory.DaoImplementationStrategy;
+import kanad.kore.data.dao.Dao;
+import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
 import kanad.kore.data.dao.PerThreadManagedContext;
-import kanad.kore.data.entity.jpa.KEntity;
 import org.apache.logging.log4j.LogManager;
 
 import javax.persistence.EntityManager;
@@ -11,7 +11,7 @@ import javax.persistence.Persistence;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class JpaDaoProviderImpl implements JpaDaoProvider {
+public class JpaDaoProviderImpl<D extends Dao<EntityManager>, T> implements JpaDaoProvider<D, T> {
 	private EntityManagerFactory emf;
 	//DAO base package name
 	private String packageName;
@@ -43,7 +43,7 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	 * kanad.kore.data.dao.DAOProvider#getDAO(java.lang.String)
 	 */
 	@Override
-	public JpaDao getDAO(String daoClassname) {
+	public D getDAO(String daoClassname) {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname);
 		return createDaoByClassname(daoClassname, null, null);
 	}
@@ -53,9 +53,9 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	 * kanad.kore.data.dao.DaoProvider#getDAO(java.lang.String, kanad.kore.data.dao.JpaDao)
 	 */
 	@Override
-	public JpaDao getDAO(String daoClassname, JpaDao existingDAO) {
-		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & existing DAO: "+existingDAO);
-		return createDaoByClassname(daoClassname, existingDAO, null);
+	public D getDAO(String daoClassname, D existingDao) {
+		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & existing DAO: "+ existingDao);
+		return createDaoByClassname(daoClassname, existingDao, null);
 	}
 	
 	
@@ -63,8 +63,9 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.String, java.lang.Class)
 	 */
 	@Override
-	public JpaDao getDAO(String daoClassname, Class<? extends KEntity> parameterizedClass) {
-		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & parameterizedClass: "+parameterizedClass);
+	public D getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
+		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & parameterizedClass: "+
+				parameterizedClass);
 		return createDaoByClassname(daoClassname, null, parameterizedClass);
 	}
 	
@@ -73,7 +74,7 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class)
 	 */
 	@Override
-	public JpaDao getDAO(Class<? extends JpaDao> daoClass) {
+	public D getDAO(Class<? extends D> daoClass) {
 		LogManager.getLogger().info("Building DAO using class:"+daoClass);
 		return createDaoByClass(daoClass, null, null);
 	}
@@ -83,9 +84,9 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class, java.lang.Object)
 	 */
 	@Override
-	public JpaDao getDAO(Class<? extends JpaDao> daoClass, JpaDao existingDAO) {
-		LogManager.getLogger().info("Building DAO using class:"+daoClass+" & existing DAO: "+existingDAO);
-		return createDaoByClass(daoClass, existingDAO, null);
+	public D getDAO(Class<? extends D> daoClass, D existingDao) {
+		LogManager.getLogger().info("Building DAO using class:"+daoClass+" & existing DAO: "+ existingDao);
+		return createDaoByClass(daoClass, existingDao, null);
 	}
 	
 	
@@ -93,21 +94,31 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class, java.lang.Class)
 	 */
 	@Override
-	public JpaDao getDAO(Class<? extends JpaDao> daoClass, Class<? extends KEntity> parameterizedClass) {
-		LogManager.getLogger().info("Building DAO using class:"+daoClass+" & parameterizedClass: "+parameterizedClass);
+	public D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass) {
+		LogManager.getLogger().info("Building DAO using class:"+daoClass+" & parameterizedClass: "+
+				parameterizedClass);
 		return createDaoByClass(daoClass, null, parameterizedClass);
 	}
 
-	
+	@Override
+	public D getDAO(String daoClassname, Class<? extends T> parameterizedClass, D existingDao) {
+		return null;
+	}
+
+	@Override
+	public D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass, D existingDao) {
+		return null;
+	}
+
 	@SuppressWarnings("unchecked")
-	private JpaDao createDaoByClassname(String daoClassname, JpaDao existingDAO, Class<? extends KEntity> parameterizedClass){
-		JpaDao dao = null;
+	private D createDaoByClassname(String daoClassname, D existingDAO, Class<? extends T> parameterizedClass){
+		D dao = null;
 		try {
 			if(packageName != null){
 				//resolve classname w.r.t the base package name provided else use the fully qualified classname.
 				daoClassname = packageName+"."+daoClassname;
 			}
-			Class<? extends JpaDao> daoClass = (Class<? extends JpaDao>) Class.forName(daoClassname);
+			Class<? extends D> daoClass = (Class<? extends D>) Class.forName(daoClassname);
 			dao = createDaoByClass(daoClass, existingDAO, parameterizedClass);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
@@ -118,14 +129,14 @@ public class JpaDaoProviderImpl implements JpaDaoProvider {
 	}
 	
 	
-	private JpaDao createDaoByClass(Class<? extends JpaDao> daoClass, JpaDao existingDAO, Class<? extends KEntity> parameterizedClass){
+	private D createDaoByClass(Class<? extends D> daoClass, D existingDAO, Class<? extends T> parameterizedClass){
 		LogManager.getLogger().info("Returning the DAO for: "+daoClass.getName());
 		
-		JpaDao dao = null;
+		D dao = null;
 		try {
 			if(parameterizedClass != null){
 				LogManager.getLogger().info("Creating DAO instance using parameterized constructor...");
-				Constructor<? extends JpaDao> constructor = daoClass.getConstructor(Class.class);
+				Constructor<? extends D> constructor = daoClass.getConstructor(Class.class);
 				LogManager.getLogger().info("Parameterized constructor = "+constructor);
 				if(!constructor.isAccessible()){
 					constructor.setAccessible(true);

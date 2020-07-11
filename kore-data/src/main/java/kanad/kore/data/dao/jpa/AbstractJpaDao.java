@@ -1,13 +1,12 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.DaoProviderFactory.DaoImplementationStrategy;
-import kanad.kore.data.entity.jpa.KEntity;
+import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
 import org.apache.logging.log4j.LogManager;
 
 import javax.persistence.EntityManager;
 import java.lang.ref.WeakReference;
 
-public abstract class AbstractJpaDao implements JpaDao {
+public abstract class AbstractJpaDao<T> implements JpaDao<T> {
 	protected EntityManager entityManager;
 	private WeakReference<JpaDaoProviderImpl> providerRef;
 	
@@ -78,16 +77,5 @@ public abstract class AbstractJpaDao implements JpaDao {
 	@Override
 	public boolean isAutoCommit() {
 		return false;//always
-	}
-
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.jpa.JpaDao#refresh(java.lang.Object)
-	 */
-	@Override
-	//One more option and which seems better one is to have cascade refresh rather than calling refresh
-	//on each embedded entity field on the given entity.
-	//Refer: http://docs.jboss.org/hibernate/orm/5.2/userguide/html_single/Hibernate_User_Guide.html#pc-cascade-refresh
-	public void refresh(KEntity entity) {
-		entityManager.refresh(entity);
 	}
 }

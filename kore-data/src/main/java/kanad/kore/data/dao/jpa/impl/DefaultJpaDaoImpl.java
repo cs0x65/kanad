@@ -1,9 +1,8 @@
 package kanad.kore.data.dao.jpa.impl;
 
 import kanad.kore.data.dao.jpa.AbstractJpaDao;
-import kanad.kore.data.dao.jpa.DefaultJpaDao;
+import kanad.kore.data.entity.KEntity;
 import kanad.kore.data.entity.jpa.AbstractEntity;
-import kanad.kore.data.entity.jpa.KEntity;
 import kanad.kore.data.entity.jpa.Remark;
 import org.apache.logging.log4j.LogManager;
 
@@ -13,21 +12,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao implements DefaultJpaDao<T> {
+public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao<T> {
 	private Class<T> clazz;
 	
 	public DefaultJpaDaoImpl() {
 
 	}
-	
+
+
 	public DefaultJpaDaoImpl(Class<T> clazz) {
 		this.clazz = clazz;
 	}
 
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.DefaultJpaDao#getEntityById(long)
-	 */
-	@Override
 	public AbstractEntity getById(long id) {
 		AbstractEntity absEntity = null;
 		try {
@@ -43,10 +39,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		return absEntity;
 	}
 
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.DefaultJpaDao#getEntityBySecureId(java.lang.String)
-	 */
-	@Override
 	public AbstractEntity getBySecureId(String secureId) {
 		AbstractEntity absEntity = null;	
 		try {
@@ -64,11 +56,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		return absEntity;
 	}
 	
-	
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.jpa.DefaultJpaDao#add(kanad.kore.data.entity.AbstractEntity)
-	 */
-	@Override
 	public void add(T entity) {
 		LogManager.getLogger().info("Adding a generic/abstract entity...");
 		if(!hasActiveTransaction()){
@@ -94,10 +81,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.jpa.DefaultJpaDao#addAll(java.util.Collection)
-	 */
-	@Override
 	public void addAll(Collection<T> entities) {
 		LogManager.getLogger().info("Adding all generic/abstract entities...");
 		if(!hasActiveTransaction()){
@@ -113,10 +96,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		}
 	}
 
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.jpa.DefaultJpaDao#update(kanad.kore.data.entity.AbstractEntity)
-	 */
-	@Override
 	public T update(T entity) {
 		LogManager.getLogger().info("Updating a generic/abstract entity...");
 		T mergedEntity = null;
@@ -133,10 +112,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		return mergedEntity;
 	}
 
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.jpa.DefaultJpaDao#delete(kanad.kore.data.entity.AbstractEntity)
-	 */
-	@Override
 	public void delete(T entity) {
 		//Soft delete
 		if(entity instanceof AbstractEntity){
@@ -152,11 +127,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		}
 	}
 	
-	
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.jpa.DefaultJpaDao#deleteHard(kanad.kore.data.entity.AbstractEntity)
-	 */
-	@Override
 	public void deleteHard(T entity) {
 		if(!hasActiveTransaction()){
 			beginTransaction();	
@@ -168,10 +138,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		
 	}
 
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.jpa.DefaultJpaDao#deleteAll(java.lang.boolean)
-	 */
-	@Override
 	public void deleteAll(boolean hardDelete) {
 		LogManager.getLogger().info("Deleting all generic/abstract entities...");
 		
@@ -191,11 +157,6 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		}
 	}
 
-	
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.jpa.DefaultJpaDao#getAll()
-	 */
-	@Override
 	public List<T> getAll(int orgId) {
 		//unsupported: subclasses shall have their specific implementation.
 		LogManager.getLogger(this.getClass().getName()).info("Returning entity list...");
@@ -214,18 +175,24 @@ public class DefaultJpaDaoImpl<T extends KEntity> extends AbstractJpaDao impleme
 		}
 		return list;
 	}
-	
+
 	/* (non-Javadoc)
-	 * kanad.kore.data.dao.DefaultJpaDao#addRemark(kanad.kore.data.entity.jpa.Remark)
+	 * kanad.kore.data.dao.jpa.JpaDao#refresh(java.lang.Object)
 	 */
 	@Override
+	//One more option and which seems better one is to have cascade refresh rather than calling refresh
+	//on each embedded entity field on the given entity.
+	//Refer: http://docs.jboss.org/hibernate/orm/5.2/userguide/html_single/Hibernate_User_Guide.html#pc-cascade-refresh
+	public void refresh(T t) {
+		entityManager.refresh(t);
+	}
+	
 	public void addRemark(Remark remark){
 		LogManager.getLogger().info("Adding remark...");
 		beginTransaction();
 		entityManager.persist(remark);
 		commitTransaction();
-		refresh(remark);
+		entityManager.refresh(remark);
 		LogManager.getLogger().info("Done persisting remarks!");
 	}
-	
 }

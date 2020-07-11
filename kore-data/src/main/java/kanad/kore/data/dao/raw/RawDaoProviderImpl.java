@@ -1,7 +1,7 @@
 package kanad.kore.data.dao.raw;
 
 
-import kanad.kore.data.dao.DaoProviderFactory.DaoImplementationStrategy;
+import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
 
 import java.util.Properties;
 
@@ -14,7 +14,7 @@ import java.util.Properties;
 //Apache DBCP
 //http://commons.apache.org/proper/commons-dbcp/
 
-public class RawDaoProviderImpl implements RawDaoProvider {
+public class RawDaoProviderImpl<D extends RawDao, T> implements RawDaoProvider<D, T> {
 	//DAO base package name
 	private String packageName;
 	private Properties connProperties;
@@ -98,66 +98,46 @@ public class RawDaoProviderImpl implements RawDaoProvider {
 //		return kanad.kore.data.dao;
 //	}
 
-	
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.String)
-	 */
+
 	@Override
-	public Object getDAO(String daoClassname) {
-		// TODO Auto-generated method stub
+	public D getDAO(String daoClassname) {
 		return null;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.String, java.lang.Object)
-	 */
 	@Override
-	public Object getDAO(String daoClassname, Object existingDAO) {
-		// TODO Auto-generated method stub
+	public D getDAO(String daoClassname, D existingDao) {
 		return null;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.String, java.lang.Class)
-	 */
 	@Override
-	public Object getDAO(String daoClassname, Class parameterizedClassname) {
-		// TODO Auto-generated method stub
+	public D getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
 		return null;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class)
-	 */
 	@Override
-	public Object getDAO(Class daoClass) {
-		// TODO Auto-generated method stub
+	public D getDAO(String daoClassname, Class<? extends T> parameterizedClass, D existingDao) {
 		return null;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class, java.lang.Object)
-	 */
 	@Override
-	public Object getDAO(Class daoClass, Object existingDAO) {
-		// TODO Auto-generated method stub
+	public D getDAO(Class<? extends D> daoClass) {
 		return null;
 	}
 
-
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class, java.lang.Class)
-	 */
 	@Override
-	public Object getDAO(Class daoClass, Class parameterizedClassname) {
-		// TODO Auto-generated method stub
+	public D getDAO(Class<? extends D> daoClass, D existingDao) {
 		return null;
 	}
 
+	@Override
+	public D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass) {
+		return null;
+	}
+
+	@Override
+	public D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass, D existingDao) {
+		return null;
+	}
 
 	@Override
 	public String getPackageName() {
@@ -174,5 +154,4 @@ public class RawDaoProviderImpl implements RawDaoProvider {
 			open = false;
 		}
 	}
-
 }

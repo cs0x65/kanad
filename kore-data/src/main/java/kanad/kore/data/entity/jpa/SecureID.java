@@ -1,5 +1,7 @@
 package kanad.kore.data.entity.jpa;
 
+import kanad.kore.data.entity.KEntity;
+
 import javax.persistence.*;
 
 @Entity
