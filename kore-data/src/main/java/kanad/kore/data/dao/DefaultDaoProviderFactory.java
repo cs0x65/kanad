@@ -1,32 +1,16 @@
 package kanad.kore.data.dao;
 
+import kanad.kore.data.dao.jpa.JpaDao;
 import kanad.kore.data.dao.jpa.JpaDaoProvider;
 import kanad.kore.data.dao.jpa.JpaDaoProviderImpl;
+import kanad.kore.data.dao.raw.RawDao;
 import kanad.kore.data.dao.raw.RawDaoProvider;
 import kanad.kore.data.dao.raw.RawDaoProviderImpl;
+import kanad.kore.data.entity.KEntity;
 
 import java.util.Properties;
 
-public class DaoProviderFactory {
-	public enum DaoImplementationStrategy{
-		/**
-		 * With per instance strategy, there is one distinct Connection or EntityManager instance 
-		 * per DAO instance.
-		 * For multi DAO scoped transactions, the same underlying Connection or EntityManager needs to be shared amongst
-		 * multiple DAOs. In such a case, make sure you use getDAO(String classname, DAO existingDAO) method of
-		 * DaoProvider which propagates the same instance of underlying Connection or EntityManager across all the DAOs
-		 * involved in a transaction.
-		 * Default is PER_INSTANCE.
-		 */
-		PER_INSTANCE,
-		/**
-		 * With per thread strategy, there is one distinct Connection or EntityManager instance 
-		 * for all the DAOs instances in the scope of a single thread.
-		 * This sort of strategy is generally used in places like requests made to web app or RESTful APIs,
-		 * where the Connection or EntityManager instance is REQUEST scoped.
-		 */
-		PER_THREAD,
-	}
+public class DefaultDaoProviderFactory {
 
 	/**
 	 * 
@@ -35,8 +19,8 @@ public class DaoProviderFactory {
 	 * This type of DAO provider shall be used with JpaDao where the data access is done using
 	 * the JPA and the corresponding EntityManager/EntityManagerFactory.
 	 */
-	public static JpaDaoProvider create(String persistentUnit){
-		return new JpaDaoProviderImpl(persistentUnit, null);
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit){
+		return new JpaDaoProviderImpl<>(persistentUnit, null);
 	}
 	
 	/**
@@ -47,8 +31,8 @@ public class DaoProviderFactory {
 	 * This type of DAO provider shall be used with JpaDao where the data access is done using
 	 * the JPA and the corresponding EntityManager/ EntityManagerFactory.
 	 */
-	public static JpaDaoProvider create(String persistentUnit, DaoImplementationStrategy strategy){
-		return new JpaDaoProviderImpl(persistentUnit, null, strategy);
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit, DaoProvider.Strategy strategy){
+		return new JpaDaoProviderImpl<>(persistentUnit, null, strategy);
 	}
 	
 	/**
@@ -60,8 +44,8 @@ public class DaoProviderFactory {
 	 * data access is done using the JPA and the corresponding EntityManager/
 	 * EntityManagerFactory.
 	 */
-	public static JpaDaoProvider create(String persistentUnit, String daoPackageName){
-		return new JpaDaoProviderImpl(persistentUnit, daoPackageName);
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit, String daoPackageName){
+		return new JpaDaoProviderImpl<>(persistentUnit, daoPackageName);
 	}
 	
 	/**
@@ -73,9 +57,9 @@ public class DaoProviderFactory {
 	 * This type of DAO provider shall be used with JpaDao where the data access is done using
 	 * the JPA and the corresponding EntityManager/EntityManagerFactory.
 	 */
-	public static JpaDaoProvider create(String persistentUnit, String daoPackageName,
-										DaoImplementationStrategy strategy){
-		return new JpaDaoProviderImpl(persistentUnit, daoPackageName, strategy);
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit, String daoPackageName,
+										DaoProvider.Strategy strategy){
+		return new JpaDaoProviderImpl<>(persistentUnit, daoPackageName, strategy);
 	}
 
 	/**
@@ -83,8 +67,8 @@ public class DaoProviderFactory {
 	 * This type of DAO provider shall be used with RawDao where the
 	 * data access is done directly over the native JDBC connection.
 	 */
-	public static RawDaoProvider create(Properties connProperties){
-		return new RawDaoProviderImpl(null, connProperties);
+	public static RawDaoProvider<RawDao<KEntity>> create(Properties connProperties){
+		return new RawDaoProviderImpl<>(null, connProperties);
 	}
 	
 	/**
@@ -96,8 +80,8 @@ public class DaoProviderFactory {
 	 * data access is done directly over the native JDBC connection.
 	 * 
 	 */
-	public static RawDaoProvider create(Properties connProperties, DaoImplementationStrategy strategy){
-		return new RawDaoProviderImpl(null, connProperties, strategy);
+	public static RawDaoProvider<RawDao<KEntity>> create(Properties connProperties, DaoProvider.Strategy strategy){
+		return new RawDaoProviderImpl<>(null, connProperties, strategy);
 	}
 	
 	/**
@@ -107,8 +91,8 @@ public class DaoProviderFactory {
 	 * This type of DAO provider shall be used with RawDao where the
 	 * data access is done directly over the native JDBC connection.
 	 */
-	public static RawDaoProvider create(String daoPackageName, Properties connProperties){
-		return new RawDaoProviderImpl(daoPackageName, connProperties);
+	public static RawDaoProvider<RawDao<KEntity>> create(String daoPackageName, Properties connProperties){
+		return new RawDaoProviderImpl<>(daoPackageName, connProperties);
 	}
 
 	/**
@@ -119,8 +103,8 @@ public class DaoProviderFactory {
 	 * This type of DAO provider shall be used with RawDao where the
 	 * data access is done directly over the native JDBC connection.
 	 */
-	public static RawDaoProvider create(String daoPackageName, Properties connProperties,
-										DaoImplementationStrategy strategy){
-		return new RawDaoProviderImpl(daoPackageName, connProperties, strategy);
+	public static RawDaoProvider<RawDao<KEntity>> create(String daoPackageName, Properties connProperties,
+										DaoProvider.Strategy strategy){
+		return new RawDaoProviderImpl<>(daoPackageName, connProperties, strategy);
 	}
 }

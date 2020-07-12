@@ -17,7 +17,7 @@ import java.util.List;
  * - all Trip Management concrete DAOs will either implement this interface or
  * - extend from a class, say - TripMgmtJpaDao which provides an implementation of this interface.
  */
-public interface DefaultJpaDao<T> {
+public interface DefaultJpaDao<T> extends JpaDao<T>{
 	//TODO: Dont make  getById and getBySecureId parameterized; instead have them return AbstractEntity and
 	// keep rest of the methods parameterized.
 	

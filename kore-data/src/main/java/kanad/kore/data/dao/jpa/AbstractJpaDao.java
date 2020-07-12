@@ -1,31 +1,24 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.DaoProviderFactory.DaoImplementationStrategy;
-import kanad.kore.data.entity.jpa.KEntity;
 import org.apache.logging.log4j.LogManager;
 
 import javax.persistence.EntityManager;
 import java.lang.ref.WeakReference;
 
-public abstract class AbstractJpaDao implements JpaDao {
+public abstract class AbstractJpaDao<T> implements JpaDao<T> {
 	protected EntityManager entityManager;
-	private WeakReference<JpaDaoProviderImpl> providerRef;
+	private WeakReference<JpaDaoProvider<T>> providerRef;
 	
 	public AbstractJpaDao(){
 	}
-	
-	
-	protected void setJpaDaoProvider(JpaDaoProviderImpl jpaDaoProviderImpl){
-		providerRef = new WeakReference<JpaDaoProviderImpl>(jpaDaoProviderImpl);
+
+	protected void setJpaDaoProvider(JpaDaoProvider<T> jpaDaoProvider){
+		providerRef = new WeakReference<>(jpaDaoProvider);
 	}
 	
 	public void close() {
 		LogManager.getLogger().info("Closing entity manager...");
-		if(providerRef.get().getImplementationStrategy() == DaoImplementationStrategy.PER_THREAD){
-			providerRef.get().closeThreadLocalManagedEntityManager();
-		}else if(entityManager != null && entityManager.isOpen()){
-			entityManager.close();
-		}
+		providerRef.get().closePersistentContext(entityManager);
 	}
 	
 	public void beginTransaction() {
@@ -78,16 +71,5 @@ public abstract class AbstractJpaDao implements JpaDao {
 	@Override
 	public boolean isAutoCommit() {
 		return false;//always
-	}
-
-	/* (non-Javadoc)
-	 * kanad.kore.data.dao.jpa.JpaDao#refresh(java.lang.Object)
-	 */
-	@Override
-	//One more option and which seems better one is to have cascade refresh rather than calling refresh
-	//on each embedded entity field on the given entity.
-	//Refer: http://docs.jboss.org/hibernate/orm/5.2/userguide/html_single/Hibernate_User_Guide.html#pc-cascade-refresh
-	public void refresh(KEntity entity) {
-		entityManager.refresh(entity);
 	}
 }

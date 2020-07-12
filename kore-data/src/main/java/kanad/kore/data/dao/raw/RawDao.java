@@ -4,6 +4,6 @@ import kanad.kore.data.dao.Dao;
 
 import java.sql.Connection;
 
-public interface RawDao extends Dao<Connection> {
+public interface RawDao<T> extends Dao<Connection, T> {
 	
 }
