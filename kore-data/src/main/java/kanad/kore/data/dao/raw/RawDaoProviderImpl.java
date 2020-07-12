@@ -18,11 +18,9 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 	private boolean open;
 	private Strategy strategy;
 	
-	
 	public RawDaoProviderImpl(String packageName, Properties connProperties) {
 		this(packageName, connProperties, Strategy.PER_INSTANCE);
 	}
-	
 	
 	public RawDaoProviderImpl(String packageName, Properties connProperties, Strategy strategy) {
 		this.packageName = packageName;

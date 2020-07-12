@@ -1,6 +1,6 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.PerThreadManagedContext;
+import kanad.kore.data.dao.ThreadBoundPersistentContext;
 import org.apache.logging.log4j.LogManager;
 
 import javax.persistence.EntityManager;
@@ -10,28 +10,27 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
-	private EntityManagerFactory emf;
+	private final EntityManagerFactory factory;
 	//DAO base package name
-	private String packageName;
-	private Strategy strategy;
-	private ThreadLocal<PerThreadManagedContext> threadLocalManagedContext = new ThreadLocal<>();
+	private final String packageName;
+	private final Strategy strategy;
+	private final ThreadLocal<ThreadBoundPersistentContext<EntityManager>> threadLocalManagedContext =
+			new ThreadLocal<>();
 	
 	public JpaDaoProviderImpl(String persistentUnit, String packageName){
 		this(persistentUnit, packageName, Strategy.PER_INSTANCE);
 	}
 	
 	public JpaDaoProviderImpl(String persistentUnit, String packageName, Strategy strategy){
-		emf = Persistence.createEntityManagerFactory(persistentUnit);
+		factory = Persistence.createEntityManagerFactory(persistentUnit);
 		this.packageName = packageName;
 		this.strategy = strategy;
 	}
 	
-	
 	public Strategy getStrategy(){
 		return strategy;
 	}
-	
-		
+
 	public String getPackageName() {
 		return packageName;
 	}
@@ -41,18 +40,13 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname);
 		return createDaoByClassname(daoClassname, null, null);
 	}
-	
-	
+
 	@Override
 	public JpaDao<? extends T> getDAO(String daoClassname, JpaDao<? extends T> existingDao) {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & existing DAO: "+ existingDao);
 		return createDaoByClassname(daoClassname, existingDao, null);
 	}
 	
-	
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.String, java.lang.Class)
-	 */
 	@Override
 	public JpaDao<? extends T> getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & parameterizedClass: "+
@@ -60,10 +54,6 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 		return createDaoByClassname(daoClassname, null, parameterizedClass);
 	}
 	
-	
-	/* (non-Javadoc)
-	 * @see kanad.kore.data.dao.DaoProvider#getDAO(java.lang.Class)
-	 */
 	@Override
 	public JpaDao<? extends T> getDAO(Class<? extends JpaDao<? extends T>> daoClass) {
 		LogManager.getLogger().info("Building DAO using class:"+daoClass);
@@ -138,68 +128,59 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 			
 			EntityManager entityManager;
 			if(strategy == Strategy.PER_THREAD){
-				LogManager.getLogger().warn("Current strategy is: PER_THREAD: one Entity Manager instance across all DAOs in same thread.");
+				LogManager.getLogger().warn("Current strategy is: PER_THREAD: one Entity Manager instance across " +
+						"all DAOs in same thread.");
 				
 				if(threadLocalManagedContext.get() == null){
 					LogManager.getLogger().warn("No Thread Local Context available! Building new one...");
-					PerThreadManagedContext perThreadManagedContext = new PerThreadManagedContext();
-					entityManager = emf.createEntityManager();
-					perThreadManagedContext.setEntityManager(entityManager);
-					threadLocalManagedContext.set(perThreadManagedContext);
+					ThreadBoundPersistentContext<EntityManager> threadBoundPersistentContext =
+							new ThreadBoundPersistentContext<>();
+					entityManager = factory.createEntityManager();
+					threadBoundPersistentContext.setPersistentContext(entityManager);
+					threadLocalManagedContext.set(threadBoundPersistentContext);
 				}else{
-					LogManager.getLogger().info("Leveraging existing Entity Manager from Managed Thread Local Context");
-					entityManager = threadLocalManagedContext.get().getEntityManager();
+					LogManager.getLogger().info("Leveraging existing Entity Manager from Managed Thread Local " +
+							"Context");
+					entityManager = threadLocalManagedContext.get().getPersistentContext();
 				}
 				
-				int emCount = threadLocalManagedContext.get().getEntityManagerCount();
-				threadLocalManagedContext.get().setEntityManagerCount(++emCount);
+				int emCount = threadLocalManagedContext.get().getPersistentContextCount();
+				threadLocalManagedContext.get().setPersistentContextCount(++emCount);
 				LogManager.getLogger().info("Total Ref Count for Thread Local EM: "+emCount);
 			}else{
 				//per instance
 				if(existingDAO != null){
-					LogManager.getLogger().info("Current strategy is: PER_INSTANCE: Reusing existing DAO/Entity Manager...");
+					LogManager.getLogger().info("Current strategy is: PER_INSTANCE: Reusing existing " +
+							"DAO/Entity Manager...");
 					entityManager = existingDAO.get();
 				}else{
 					//No existing DAO passed and additionally, the strategy is per instance.
-					LogManager.getLogger().warn("No existing DAO received; Current strategy is: PER_INSTANCE; one Entity Manager instance per DAO.");
-					entityManager = emf.createEntityManager();
+					LogManager.getLogger().warn("No existing DAO received; Current strategy is: PER_INSTANCE; " +
+							"one Entity Manager instance per DAO.");
+					entityManager = factory.createEntityManager();
 				}
 			}
 			
 			dao.set(entityManager);
 			((AbstractJpaDao<? extends T>)dao).setJpaDaoProvider(this);
-		} catch (InstantiationException e) {
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException |
+				IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
 			LogManager.getLogger().error("Can't create DAO!");
 			LogManager.getLogger().error("Exception : "+e);
-		} catch (IllegalAccessException e) {
-			LogManager.getLogger().error("Can't create DAO!");
-			LogManager.getLogger().error("Exception : "+e);
-		} catch (NoSuchMethodException e) {
-			LogManager.getLogger().error("Can't create DAO!");
-			LogManager.getLogger().error("Exception : "+e);
-		} catch (SecurityException e) {
-			LogManager.getLogger().error("Can't create DAO!");
-			LogManager.getLogger().error("Exception : "+e);
-		} catch (IllegalArgumentException e) {
-			LogManager.getLogger().error("Can't create DAO!");
-			LogManager.getLogger().error("Exception : "+e);
-		} catch (InvocationTargetException e) {
-			LogManager.getLogger().error("Can't create DAO!");
-			LogManager.getLogger().error("Exception : "+e);
 		}
-		
 		return dao;
 	}
 
 	protected void closeThreadLocalManagedEntityManager(){
 		LogManager.getLogger().info("Closing Thread Local Managed Entity Manager...");
-		int emCount = threadLocalManagedContext.get().getEntityManagerCount();
-		threadLocalManagedContext.get().setEntityManagerCount(--emCount);
+		int emCount = threadLocalManagedContext.get().getPersistentContextCount();
+		threadLocalManagedContext.get().setPersistentContextCount(--emCount);
 		LogManager.getLogger().info("Total Ref Count for Thread Local EM: "+emCount);
 		if(emCount == 0){
-			LogManager.getLogger().info("No more active refs to Thread Local Managed Entity Manager; Cleaning up Thread Local Managed Context");
-			EntityManager entityManager = threadLocalManagedContext.get().getEntityManager();
+			LogManager.getLogger().info("No more active refs to Thread Local Managed Entity Manager; " +
+					"Cleaning up Thread Local Managed Context");
+			EntityManager entityManager = threadLocalManagedContext.get().getPersistentContext();
 			if(entityManager != null && entityManager.isOpen()){
 				entityManager.close();
 				entityManager = null;
@@ -209,9 +190,9 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 	}
 
 	public void close() {
-		if(emf.isOpen()){
+		if(factory.isOpen()){
 			LogManager.getLogger().info("Closing EntityManagerFactory...");
-			emf.close();
+			factory.close();
 		}
 	}
 }
