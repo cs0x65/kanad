@@ -38,32 +38,32 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 	@Override
 	public JpaDao<? extends T> getDAO(String daoClassname) {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname);
-		return createDaoByClassname(daoClassname, null, null);
+		return getDAO(daoClassname, null, null);
 	}
 
 	@Override
 	public JpaDao<? extends T> getDAO(String daoClassname, JpaDao<? extends T> existingDao) {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & existing DAO: "+ existingDao);
-		return createDaoByClassname(daoClassname, existingDao, null);
+		return getDAO(daoClassname, existingDao, null);
 	}
 	
 	@Override
 	public JpaDao<? extends T> getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
 		LogManager.getLogger().info("Building DAO using classname:"+daoClassname+" & parameterizedClass: "+
 				parameterizedClass);
-		return createDaoByClassname(daoClassname, null, parameterizedClass);
+		return getDAO(daoClassname, null, parameterizedClass);
 	}
 	
 	@Override
 	public JpaDao<? extends T> getDAO(Class<? extends JpaDao<? extends T>> daoClass) {
 		LogManager.getLogger().info("Building DAO using class:"+daoClass);
-		return createDaoByClass(daoClass, null, null);
+		return getDAO(daoClass, null, null);
 	}
 	
 	@Override
 	public JpaDao<? extends T> getDAO(Class<? extends JpaDao<? extends T>> daoClass, JpaDao<? extends T> existingDao) {
 		LogManager.getLogger().info("Building DAO using class:"+daoClass+" & existing DAO: "+ existingDao);
-		return createDaoByClass(daoClass, existingDao, null);
+		return getDAO(daoClass, existingDao, null);
 	}
 	
 	@Override
@@ -71,23 +71,12 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 									  Class<? extends T> parameterizedClass) {
 		LogManager.getLogger().info("Building DAO using class:"+daoClass+" & parameterizedClass: "+
 				parameterizedClass);
-		return createDaoByClass(daoClass, null, parameterizedClass);
+		return getDAO(daoClass, null, parameterizedClass);
 	}
 
 	@Override
-	public JpaDao<T> getDAO(String daoClassname, JpaDao<? extends T> existingDao,
-							Class<? extends T> parameterizedClass ) {
-		return null;
-	}
-
-	@Override
-	public JpaDao<T> getDAO(Class<? extends JpaDao<? extends T>> daoClass, JpaDao<? extends T> existingDao,
-									  Class<? extends T> parameterizedClass) {
-		return null;
-	}
-
 	@SuppressWarnings("unchecked")
-	private JpaDao<? extends T> createDaoByClassname(String daoClassname, JpaDao<? extends T> existingDAO,
+	public JpaDao<? extends T> getDAO(String daoClassname, JpaDao<? extends T> existingDAO,
 													 Class<? extends T> parameterizedClass){
 		JpaDao<? extends T> dao = null;
 		try {
@@ -97,7 +86,7 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 			}
 			Class<? extends JpaDao<? extends T>> daoClass =
 					(Class<? extends JpaDao<? extends T>>) Class.forName(daoClassname);
-			dao = createDaoByClass(daoClass, existingDAO, parameterizedClass);
+			dao = getDAO(daoClass, existingDAO, parameterizedClass);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 			LogManager.getLogger().error("Can't create DAO!");
@@ -105,9 +94,10 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 		}
 		return dao;
 	}
-	
+
+	@Override
 	@SuppressWarnings("unchecked")
-	private JpaDao<? extends T> createDaoByClass(Class<? extends JpaDao<? extends T>> daoClass,
+	public JpaDao<? extends T> getDAO(Class<? extends JpaDao<? extends T>> daoClass,
 												 JpaDao<? extends T> existingDAO,
 												 Class<? extends T> parameterizedClass){
 		LogManager.getLogger().info("Returning the DAO for: "+daoClass.getName());
@@ -116,12 +106,12 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 		try {
 			if(parameterizedClass != null){
 				LogManager.getLogger().info("Creating DAO instance using parameterized constructor...");
-				Constructor<? extends JpaDao<?>> constructor = daoClass.getConstructor(Class.class);
+				Constructor<? extends JpaDao<? extends T>> constructor = daoClass.getConstructor(Class.class);
 				LogManager.getLogger().info("Parameterized constructor = "+constructor);
 				if(!constructor.isAccessible()){
 					constructor.setAccessible(true);
 				}
-				dao = (JpaDao<? extends T>) constructor.newInstance(parameterizedClass);
+				dao = constructor.newInstance(parameterizedClass);
 			}else{
 				dao = daoClass.newInstance();
 			}
@@ -162,7 +152,7 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 			}
 			
 			dao.set(entityManager);
-			((AbstractJpaDao<? extends T>)dao).setJpaDaoProvider(this);
+			((AbstractJpaDao<T>)dao).setJpaDaoProvider(this);
 		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException |
 				IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -172,27 +162,38 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 		return dao;
 	}
 
-	protected void closeThreadLocalManagedEntityManager(){
-		LogManager.getLogger().info("Closing Thread Local Managed Entity Manager...");
-		int emCount = threadLocalManagedContext.get().getPersistentContextCount();
-		threadLocalManagedContext.get().setPersistentContextCount(--emCount);
-		LogManager.getLogger().info("Total Ref Count for Thread Local EM: "+emCount);
-		if(emCount == 0){
-			LogManager.getLogger().info("No more active refs to Thread Local Managed Entity Manager; " +
-					"Cleaning up Thread Local Managed Context");
-			EntityManager entityManager = threadLocalManagedContext.get().getPersistentContext();
-			if(entityManager != null && entityManager.isOpen()){
-				entityManager.close();
-				entityManager = null;
-			}
-			threadLocalManagedContext.remove();
-		}
-	}
-
+	@Override
 	public void close() {
 		if(factory.isOpen()){
 			LogManager.getLogger().info("Closing EntityManagerFactory...");
 			factory.close();
+		}
+	}
+
+	@Override
+	public void closePersistentContext(EntityManager entityManager){
+		LogManager.getLogger().info("Closing EntityManager...");
+		if (strategy == Strategy.PER_THREAD){
+			LogManager.getLogger().info("Closing Thread Local Managed Entity Manager...");
+			int emCount = threadLocalManagedContext.get().getPersistentContextCount();
+			threadLocalManagedContext.get().setPersistentContextCount(--emCount);
+			LogManager.getLogger().info("Total Ref Count for Thread Local EM: "+emCount);
+			if(emCount == 0){
+				LogManager.getLogger().info("No more active refs to Thread Local Managed Entity Manager; " +
+						"Cleaning up Thread Local Managed Context");
+				entityManager = threadLocalManagedContext.get().getPersistentContext();
+				closeEntityManager(entityManager);
+				threadLocalManagedContext.remove();
+			}
+		}else {
+			closeEntityManager(entityManager);
+		}
+	}
+
+	private void closeEntityManager(EntityManager entityManager){
+		if(entityManager != null && entityManager.isOpen()){
+			entityManager.close();
+			entityManager = null;
 		}
 	}
 }

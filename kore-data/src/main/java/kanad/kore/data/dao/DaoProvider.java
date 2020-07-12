@@ -109,6 +109,16 @@ public interface DaoProvider<I, T, D extends Dao<I, ? extends T>> {
 	String getPackageName();
 	
 	Strategy getStrategy();
-	
+
+	/**
+	 * Closes the provider.
+	 */
 	void close();
+
+	/**
+	 * This method acts like a listener/observer- when the Dao is being closed, it shall invoke this method
+	 * and give chance to the provider to undertake it's clean up and housekeeping related tasks.
+	 * @param persistentContext close the EntityManager or the Connection provided.
+	 */
+	void closePersistentContext(I persistentContext);
 }

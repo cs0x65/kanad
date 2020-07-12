@@ -1,6 +1,5 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.DaoProvider;
 import org.apache.logging.log4j.LogManager;
 
 import javax.persistence.EntityManager;
@@ -8,23 +7,18 @@ import java.lang.ref.WeakReference;
 
 public abstract class AbstractJpaDao<T> implements JpaDao<T> {
 	protected EntityManager entityManager;
-	private WeakReference<JpaDaoProviderImpl> providerRef;
+	private WeakReference<JpaDaoProvider<T>> providerRef;
 	
 	public AbstractJpaDao(){
 	}
-	
-	
-	protected void setJpaDaoProvider(JpaDaoProviderImpl jpaDaoProviderImpl){
-		providerRef = new WeakReference<JpaDaoProviderImpl>(jpaDaoProviderImpl);
+
+	protected void setJpaDaoProvider(JpaDaoProvider<T> jpaDaoProvider){
+		providerRef = new WeakReference<>(jpaDaoProvider);
 	}
 	
 	public void close() {
 		LogManager.getLogger().info("Closing entity manager...");
-		if(providerRef.get().getStrategy() == DaoProvider.Strategy.PER_THREAD){
-			providerRef.get().closeThreadLocalManagedEntityManager();
-		}else if(entityManager != null && entityManager.isOpen()){
-			entityManager.close();
-		}
+		providerRef.get().closePersistentContext(entityManager);
 	}
 	
 	public void beginTransaction() {

@@ -2,12 +2,14 @@ package kanad.kore.data.dao.raw;
 
 import org.apache.logging.log4j.LogManager;
 
+import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class AbstractRawDao<T> implements RawDao<T> {
 	protected Connection connection;
 	private boolean txnInProgress;
+	private WeakReference<RawDaoProvider<T>> providerRef;
 
 	/* (non-Javadoc)
 	 * kanad.kore.data.dao.Dao#set(java.lang.Object)
@@ -25,20 +27,17 @@ public class AbstractRawDao<T> implements RawDao<T> {
 		return connection;
 	}
 
+	public void setProviderRef(RawDaoProvider<T> providerRef) {
+		this.providerRef = new WeakReference<>(providerRef);
+	}
+
 	/* (non-Javadoc)
 	 * kanad.kore.data.dao.Dao#close()
 	 */
 	@Override
 	public void close() {
-		try {
-			connection.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			LogManager.getLogger().error("Not able to close JDBC connection: "+connection);
-			LogManager.getLogger().error("Exception : "+e);
-		}finally{
-			connection = null;
-		}
+		LogManager.getLogger().info("Closing connection...");
+		providerRef.get().closePersistentContext(connection);
 	}
 
 	/* (non-Javadoc)

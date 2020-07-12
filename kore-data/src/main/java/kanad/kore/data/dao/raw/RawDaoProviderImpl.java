@@ -1,5 +1,13 @@
 package kanad.kore.data.dao.raw;
 
+import kanad.kore.data.dao.ThreadBoundPersistentContext;
+import org.apache.logging.log4j.LogManager;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
 //TODO: Provide one more variant for DataSource based connection pool compliant JDBC connection management or
@@ -13,10 +21,11 @@ import java.util.Properties;
 
 public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 	//DAO base package name
-	private String packageName;
-	private Properties connProperties;
+	private final String packageName;
+	private final Properties connProperties;
 	private boolean open;
-	private Strategy strategy;
+	private final Strategy strategy;
+	private final ThreadLocal<ThreadBoundPersistentContext<Connection>> threadLocalManagedContext = new ThreadLocal<>();
 	
 	public RawDaoProviderImpl(String packageName, Properties connProperties) {
 		this(packageName, connProperties, Strategy.PER_INSTANCE);
@@ -96,42 +105,124 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 
 	@Override
 	public RawDao<? extends T> getDAO(String daoClassname) {
-		return null;
+		return getDAO(daoClassname, null, null);
 	}
 
 	@Override
 	public RawDao<? extends T> getDAO(String daoClassname, RawDao<? extends T> existingDao) {
-		return null;
+		return getDAO(daoClassname, existingDao, null);
 	}
 
 	@Override
 	public RawDao<? extends T> getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
-		return null;
+		return getDAO(daoClassname, null, parameterizedClass);
 	}
 
 	@Override
-	public RawDao<? extends T> getDAO(String daoClassname, RawDao<? extends T> existingDao, Class<? extends T> parameterizedClass) {
-		return null;
+	@SuppressWarnings("unchecked")
+	public RawDao<? extends T> getDAO(String daoClassname, RawDao<? extends T> existingDao,
+									  Class<? extends T> parameterizedClass) {
+		RawDao<? extends T> dao = null;
+		try {
+			if(packageName != null){
+				//resolve classname w.r.t the base package name provided else use the fully qualified classname.
+				daoClassname = packageName+"."+daoClassname;
+			}
+			Class<? extends RawDao<? extends T>> daoClass =
+					(Class<? extends RawDao<? extends T>>) Class.forName(daoClassname);
+			dao = getDAO(daoClass, existingDao, parameterizedClass);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			LogManager.getLogger().error("Can't create DAO!");
+			LogManager.getLogger().error("Exception : "+e);
+		}
+		return dao;
 	}
 
 	@Override
 	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass) {
-		return null;
+		return getDAO(daoClass, null, null);
 	}
 
 	@Override
 	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, RawDao<? extends T> existingDao) {
-		return null;
+		return getDAO(daoClass, existingDao, null);
 	}
 
 	@Override
-	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, Class<? extends T> parameterizedClass) {
-		return null;
+	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass,
+									  Class<? extends T> parameterizedClass) {
+		return getDAO(daoClass, null, parameterizedClass);
 	}
 
 	@Override
-	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, RawDao<? extends T> existingDao, Class<? extends T> parameterizedClass) {
-		return null;
+	@SuppressWarnings("unchecked")
+	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, RawDao<? extends T> existingDao,
+									  Class<? extends T> parameterizedClass) {
+		LogManager.getLogger().info("Returning the DAO for: "+daoClass.getName());
+
+		RawDao<? extends T> dao = null;
+		try {
+			if(parameterizedClass != null){
+				LogManager.getLogger().info("Creating DAO instance using parameterized constructor...");
+				Constructor<? extends RawDao<? extends T>> constructor = daoClass.getConstructor(Class.class);
+				LogManager.getLogger().info("Parameterized constructor = "+constructor);
+				if(!constructor.isAccessible()){
+					constructor.setAccessible(true);
+				}
+				dao = constructor.newInstance(parameterizedClass);
+			}else{
+				dao = daoClass.newInstance();
+			}
+
+			Connection connection;
+			if(strategy == Strategy.PER_THREAD){
+				LogManager.getLogger().warn("Current strategy is: PER_THREAD: one Connection instance across " +
+						"all DAOs in same thread.");
+
+				if(threadLocalManagedContext.get() == null){
+					LogManager.getLogger().warn("No Thread Local Context available! Building new one...");
+					ThreadBoundPersistentContext<Connection> threadBoundPersistentContext =
+							new ThreadBoundPersistentContext<>();
+					connection = DriverManager.getConnection(connProperties.getProperty(CONN_URL),
+							connProperties.getProperty(CONN_USERNAME),
+							connProperties.getProperty(CONN_PASSWORD));
+					threadBoundPersistentContext.setPersistentContext(connection);
+					threadLocalManagedContext.set(threadBoundPersistentContext);
+				}else{
+					LogManager.getLogger().info("Leveraging existing Entity Manager from Managed Thread Local " +
+							"Context");
+					connection = threadLocalManagedContext.get().getPersistentContext();
+				}
+
+				int connectionCount = threadLocalManagedContext.get().getPersistentContextCount();
+				threadLocalManagedContext.get().setPersistentContextCount(++connectionCount);
+				LogManager.getLogger().info("Total Ref Count for Thread Local Connection: "+connectionCount);
+			}else{
+				//per instance
+				if(existingDao != null){
+					LogManager.getLogger().info("Current strategy is: PER_INSTANCE: Reusing existing " +
+							"DAO/Entity Manager...");
+					connection = existingDao.get();
+				}else{
+					//No existing DAO passed and additionally, the strategy is per instance.
+					LogManager.getLogger().warn("No existing DAO received; Current strategy is: PER_INSTANCE; " +
+							"one Entity Manager instance per DAO.");
+					connection = DriverManager.getConnection(connProperties.getProperty(CONN_URL),
+							connProperties.getProperty(CONN_USERNAME),
+							connProperties.getProperty(CONN_PASSWORD));
+				}
+			}
+
+			dao.set(connection);
+			((AbstractRawDao<T>)dao).setProviderRef(this);
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException |
+				IllegalArgumentException | InvocationTargetException | SQLException e) {
+			e.printStackTrace();
+			LogManager.getLogger().error("Can't create DAO!");
+			LogManager.getLogger().error("Exception : "+e);
+		}
+		return dao;
 	}
 
 	@Override
@@ -147,6 +238,40 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 	public void close() {
 		if(isOpen()){
 			open = false;
+			//TODO: close all connections? May be possible with ConnectionPool but what if connection pooling it not
+			// used
+		}
+	}
+
+	@Override
+	public void closePersistentContext(Connection connection){
+		LogManager.getLogger().info("Closing Connection...");
+		if (strategy == Strategy.PER_THREAD){
+			int connectionCount = threadLocalManagedContext.get().getPersistentContextCount();
+			threadLocalManagedContext.get().setPersistentContextCount(--connectionCount);
+			LogManager.getLogger().info("Total Ref Count for Thread Local EM: "+connectionCount);
+			if(connectionCount == 0){
+				LogManager.getLogger().info("No more active refs to Thread Local Managed Entity Manager; " +
+						"Cleaning up Thread Local Managed Context");
+				connection = threadLocalManagedContext.get().getPersistentContext();
+				closeConnection(connection);
+				threadLocalManagedContext.remove();
+			}
+		}else {
+			closeConnection(connection);
+		}
+	}
+
+	private void closeConnection(Connection connection){
+		try {
+			if (connection != null && !connection.isClosed())
+				connection.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			LogManager.getLogger().error("Not able to close JDBC connection: "+connection);
+			LogManager.getLogger().error("Exception : "+e);
+		}finally{
+			connection = null;
 		}
 	}
 }
