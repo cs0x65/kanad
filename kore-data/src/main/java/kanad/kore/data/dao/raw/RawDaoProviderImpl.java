@@ -14,7 +14,7 @@ import java.util.Properties;
 //Apache DBCP
 //http://commons.apache.org/proper/commons-dbcp/
 
-public class RawDaoProviderImpl<D extends RawDao, T> implements RawDaoProvider<D, T> {
+public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 	//DAO base package name
 	private String packageName;
 	private Properties connProperties;
@@ -100,42 +100,42 @@ public class RawDaoProviderImpl<D extends RawDao, T> implements RawDaoProvider<D
 
 
 	@Override
-	public D getDAO(String daoClassname) {
+	public RawDao<? extends T> getDAO(String daoClassname) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(String daoClassname, D existingDao) {
+	public RawDao<? extends T> getDAO(String daoClassname, RawDao<? extends T> existingDao) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
+	public RawDao<? extends T> getDAO(String daoClassname, Class<? extends T> parameterizedClass) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(String daoClassname, Class<? extends T> parameterizedClass, D existingDao) {
+	public RawDao<? extends T> getDAO(String daoClassname, RawDao<? extends T> existingDao, Class<? extends T> parameterizedClass) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(Class<? extends D> daoClass) {
+	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(Class<? extends D> daoClass, D existingDao) {
+	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, RawDao<? extends T> existingDao) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass) {
+	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, Class<? extends T> parameterizedClass) {
 		return null;
 	}
 
 	@Override
-	public D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass, D existingDao) {
+	public RawDao<? extends T> getDAO(Class<? extends RawDao<? extends T>> daoClass, RawDao<? extends T> existingDao, Class<? extends T> parameterizedClass) {
 		return null;
 	}
 

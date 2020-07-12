@@ -38,7 +38,7 @@ public class DefaultDaoProviderFactory {
 	 * This type of DAO provider shall be used with JpaDao where the data access is done using
 	 * the JPA and the corresponding EntityManager/EntityManagerFactory.
 	 */
-	public static JpaDaoProvider<JpaDao, KEntity> create(String persistentUnit){
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit){
 		return new JpaDaoProviderImpl<>(persistentUnit, null);
 	}
 	
@@ -50,7 +50,7 @@ public class DefaultDaoProviderFactory {
 	 * This type of DAO provider shall be used with JpaDao where the data access is done using
 	 * the JPA and the corresponding EntityManager/ EntityManagerFactory.
 	 */
-	public static JpaDaoProvider<JpaDao, KEntity> create(String persistentUnit, DaoImplementationStrategy strategy){
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit, DaoImplementationStrategy strategy){
 		return new JpaDaoProviderImpl<>(persistentUnit, null, strategy);
 	}
 	
@@ -63,8 +63,8 @@ public class DefaultDaoProviderFactory {
 	 * data access is done using the JPA and the corresponding EntityManager/
 	 * EntityManagerFactory.
 	 */
-	public static JpaDaoProvider<JpaDao, KEntity> create(String persistentUnit, String daoPackageName){
-		return new JpaDaoProviderImpl(persistentUnit, daoPackageName);
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit, String daoPackageName){
+		return new JpaDaoProviderImpl<>(persistentUnit, daoPackageName);
 	}
 	
 	/**
@@ -76,7 +76,7 @@ public class DefaultDaoProviderFactory {
 	 * This type of DAO provider shall be used with JpaDao where the data access is done using
 	 * the JPA and the corresponding EntityManager/EntityManagerFactory.
 	 */
-	public static JpaDaoProvider<JpaDao, KEntity> create(String persistentUnit, String daoPackageName,
+	public static JpaDaoProvider<JpaDao<KEntity>> create(String persistentUnit, String daoPackageName,
 										DaoImplementationStrategy strategy){
 		return new JpaDaoProviderImpl<>(persistentUnit, daoPackageName, strategy);
 	}
@@ -86,7 +86,7 @@ public class DefaultDaoProviderFactory {
 	 * This type of DAO provider shall be used with RawDao where the
 	 * data access is done directly over the native JDBC connection.
 	 */
-	public static RawDaoProvider<RawDao, KEntity> create(Properties connProperties){
+	public static RawDaoProvider<RawDao<KEntity>> create(Properties connProperties){
 		return new RawDaoProviderImpl<>(null, connProperties);
 	}
 	
@@ -99,7 +99,7 @@ public class DefaultDaoProviderFactory {
 	 * data access is done directly over the native JDBC connection.
 	 * 
 	 */
-	public static RawDaoProvider<RawDao, KEntity> create(Properties connProperties, DaoImplementationStrategy strategy){
+	public static RawDaoProvider<RawDao<KEntity>> create(Properties connProperties, DaoImplementationStrategy strategy){
 		return new RawDaoProviderImpl<>(null, connProperties, strategy);
 	}
 	
@@ -110,7 +110,7 @@ public class DefaultDaoProviderFactory {
 	 * This type of DAO provider shall be used with RawDao where the
 	 * data access is done directly over the native JDBC connection.
 	 */
-	public static RawDaoProvider<RawDao, KEntity> create(String daoPackageName, Properties connProperties){
+	public static RawDaoProvider<RawDao<KEntity>> create(String daoPackageName, Properties connProperties){
 		return new RawDaoProviderImpl<>(daoPackageName, connProperties);
 	}
 
@@ -122,7 +122,7 @@ public class DefaultDaoProviderFactory {
 	 * This type of DAO provider shall be used with RawDao where the
 	 * data access is done directly over the native JDBC connection.
 	 */
-	public static RawDaoProvider<RawDao, KEntity> create(String daoPackageName, Properties connProperties,
+	public static RawDaoProvider<RawDao<KEntity>> create(String daoPackageName, Properties connProperties,
 										DaoImplementationStrategy strategy){
 		return new RawDaoProviderImpl<>(daoPackageName, connProperties, strategy);
 	}

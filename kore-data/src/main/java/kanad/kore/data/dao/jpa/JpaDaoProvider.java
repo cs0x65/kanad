@@ -1,8 +1,9 @@
 package kanad.kore.data.dao.jpa;
 
 import kanad.kore.data.dao.DaoProvider;
-import kanad.kore.data.entity.KEntity;
 
-public interface JpaDaoProvider<D, T> extends DaoProvider<D, T> {
+import javax.persistence.EntityManager;
+
+public interface JpaDaoProvider<T> extends DaoProvider<EntityManager, T, JpaDao<? extends T>> {
 
 }

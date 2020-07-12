@@ -5,7 +5,7 @@ package kanad.kore.data.dao;
  * Based on this, the Dao will be either Jpa based i.e. JpaDao or JDBC based raw one i.e. RawDao.
  * There are corresponding parameterized DAO providers that return the respective Dao variants. 
  */
-public interface Dao<I> {
+public interface Dao<I, T> {
 	void set(I connOrEntMgr);
 	
 	I get();
@@ -23,4 +23,11 @@ public interface Dao<I> {
 	public void setAutoCommit(boolean autoCommit);
 	
 	public boolean isAutoCommit();
+
+	/**
+	 *
+	 * @param t in the current persistent context, the state of which needs to be refreshed/reconciled from DB.
+	 * Refreshes the state of the entity instance in the current persistent context from the database.
+	 */
+	void refresh(T t);
 }

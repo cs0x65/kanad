@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class AbstractRawDao implements RawDao {
+public class AbstractRawDao<T> implements RawDao<T> {
 	protected Connection connection;
 	private boolean txnInProgress;
 
@@ -156,4 +156,8 @@ public class AbstractRawDao implements RawDao {
 		return autoCommit;
 	}
 
+	@Override
+	public void refresh(T t) {
+
+	}
 }

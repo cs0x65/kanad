@@ -2,7 +2,7 @@ package kanad.kore.data.dao;
 
 import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
 
-public interface DaoProvider<D, T> {
+public interface DaoProvider<I, T, D extends Dao<I, ? extends T>> {
 	/**
 	 * 
 	 * @param daoClassname the name of the DAO class
@@ -38,11 +38,11 @@ public interface DaoProvider<D, T> {
 	/**
 	 *
 	 * @param daoClassname the name of the DAO class
-	 * @param parameterizedClass the class name of the parameterized type required by the corresponding DAO class.
 	 * @param existingDao
+	 * @param parameterizedClass the class name of the parameterized type required by the corresponding DAO class.
 	 * @return
 	 */
-	D getDAO(String daoClassname, Class<? extends T> parameterizedClass, D existingDao);
+	D getDAO(String daoClassname, D existingDao, Class<? extends T> parameterizedClass);
 	
 	
 	/**
@@ -72,11 +72,11 @@ public interface DaoProvider<D, T> {
 	/**
 	 *
 	 * @param daoClass the DAO class
-	 * @param parameterizedClass the class name of the parameterized type required by the corresponding DAO class.
 	 * @param existingDao
+	 * @param parameterizedClass the class name of the parameterized type required by the corresponding DAO class.
 	 * @return
 	 */
-	D getDAO(Class<? extends D> daoClass, Class<? extends T> parameterizedClass, D existingDao);
+	D getDAO(Class<? extends D> daoClass, D existingDao, Class<? extends T> parameterizedClass);
 	
 	/**
 	 * Optional
