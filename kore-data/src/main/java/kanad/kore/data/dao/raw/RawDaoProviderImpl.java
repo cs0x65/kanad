@@ -1,8 +1,5 @@
 package kanad.kore.data.dao.raw;
 
-
-import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
-
 import java.util.Properties;
 
 //TODO: Provide one more variant for DataSource based connection pool compliant JDBC connection management or
@@ -19,15 +16,15 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 	private String packageName;
 	private Properties connProperties;
 	private boolean open;
-	private DaoImplementationStrategy strategy;
+	private Strategy strategy;
 	
 	
 	public RawDaoProviderImpl(String packageName, Properties connProperties) {
-		this(packageName, connProperties, DaoImplementationStrategy.PER_INSTANCE);
+		this(packageName, connProperties, Strategy.PER_INSTANCE);
 	}
 	
 	
-	public RawDaoProviderImpl(String packageName, Properties connProperties, DaoImplementationStrategy strategy) {
+	public RawDaoProviderImpl(String packageName, Properties connProperties, Strategy strategy) {
 		this.packageName = packageName;
 		this.connProperties = connProperties;
 		this.strategy = strategy;
@@ -35,7 +32,7 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 	}
 	
 	
-	public DaoImplementationStrategy getImplementationStrategy(){
+	public Strategy getStrategy(){
 		return strategy;
 	}
 	
@@ -71,7 +68,7 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 //				LogManager.getLogger().info("Reusing existing DAO/Connection...");
 //				kanad.kore.data.dao.set(((RawDao)existingDAO).get());
 //			}else{
-//				if(strategy == DaoImplementationStrategy.PER_THREAD){
+//				if(strategy == Strategy.PER_THREAD){
 //					LogManager.getLogger().warn("Current strategy is: PER_THREAD, creating a new Connection per DAO is same as PER_INSTANCE; make sure you pass existing DAO to achieve the expected behavior!");
 //				}
 //				Connection conn = DriverManager.getConnection(connProperties.getProperty(CONN_URL), connProperties.getProperty(CONN_USERNAME), connProperties.getProperty(CONN_PASSWORD));

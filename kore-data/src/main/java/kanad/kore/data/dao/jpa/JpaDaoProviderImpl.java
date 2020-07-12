@@ -1,6 +1,5 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
 import kanad.kore.data.dao.PerThreadManagedContext;
 import org.apache.logging.log4j.LogManager;
 
@@ -14,21 +13,21 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 	private EntityManagerFactory emf;
 	//DAO base package name
 	private String packageName;
-	private DaoImplementationStrategy strategy;
+	private Strategy strategy;
 	private ThreadLocal<PerThreadManagedContext> threadLocalManagedContext = new ThreadLocal<>();
 	
 	public JpaDaoProviderImpl(String persistentUnit, String packageName){
-		this(persistentUnit, packageName, DaoImplementationStrategy.PER_INSTANCE);
+		this(persistentUnit, packageName, Strategy.PER_INSTANCE);
 	}
 	
-	public JpaDaoProviderImpl(String persistentUnit, String packageName, DaoImplementationStrategy strategy){
+	public JpaDaoProviderImpl(String persistentUnit, String packageName, Strategy strategy){
 		emf = Persistence.createEntityManagerFactory(persistentUnit);
 		this.packageName = packageName;
 		this.strategy = strategy;
 	}
 	
 	
-	public DaoImplementationStrategy getImplementationStrategy(){
+	public Strategy getStrategy(){
 		return strategy;
 	}
 	
@@ -138,7 +137,7 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 			}
 			
 			EntityManager entityManager;
-			if(strategy == DaoImplementationStrategy.PER_THREAD){
+			if(strategy == Strategy.PER_THREAD){
 				LogManager.getLogger().warn("Current strategy is: PER_THREAD: one Entity Manager instance across all DAOs in same thread.");
 				
 				if(threadLocalManagedContext.get() == null){
@@ -209,7 +208,6 @@ public class JpaDaoProviderImpl<T> implements JpaDaoProvider<T> {
 		}
 	}
 
-	
 	public void close() {
 		if(emf.isOpen()){
 			LogManager.getLogger().info("Closing EntityManagerFactory...");

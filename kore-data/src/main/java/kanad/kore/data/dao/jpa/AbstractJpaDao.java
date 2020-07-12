@@ -1,6 +1,6 @@
 package kanad.kore.data.dao.jpa;
 
-import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
+import kanad.kore.data.dao.DaoProvider;
 import org.apache.logging.log4j.LogManager;
 
 import javax.persistence.EntityManager;
@@ -20,7 +20,7 @@ public abstract class AbstractJpaDao<T> implements JpaDao<T> {
 	
 	public void close() {
 		LogManager.getLogger().info("Closing entity manager...");
-		if(providerRef.get().getImplementationStrategy() == DaoImplementationStrategy.PER_THREAD){
+		if(providerRef.get().getStrategy() == DaoProvider.Strategy.PER_THREAD){
 			providerRef.get().closeThreadLocalManagedEntityManager();
 		}else if(entityManager != null && entityManager.isOpen()){
 			entityManager.close();

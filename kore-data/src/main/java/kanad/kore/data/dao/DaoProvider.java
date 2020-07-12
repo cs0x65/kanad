@@ -1,8 +1,26 @@
 package kanad.kore.data.dao;
 
-import kanad.kore.data.dao.DefaultDaoProviderFactory.DaoImplementationStrategy;
-
 public interface DaoProvider<I, T, D extends Dao<I, ? extends T>> {
+	enum Strategy {
+		/**
+		 * With per instance strategy, there is one distinct Connection or EntityManager instance
+		 * per DAO instance.
+		 * For multi DAO scoped transactions, the same underlying Connection or EntityManager needs to be shared amongst
+		 * multiple DAOs. In such a case, make sure you use getDAO(String classname, DAO existingDAO) method of
+		 * DaoProvider which propagates the same instance of underlying Connection or EntityManager across all the DAOs
+		 * involved in a transaction.
+		 * Default is PER_INSTANCE.
+		 */
+		PER_INSTANCE,
+		/**
+		 * With per thread strategy, there is one distinct Connection or EntityManager instance
+		 * for all the DAOs instances in the scope of a single thread.
+		 * This sort of strategy is generally used in places like requests made to web app or RESTful APIs,
+		 * where the Connection or EntityManager instance is REQUEST scoped.
+		 */
+		PER_THREAD,
+	}
+
 	/**
 	 * 
 	 * @param daoClassname the name of the DAO class
@@ -90,7 +108,7 @@ public interface DaoProvider<I, T, D extends Dao<I, ? extends T>> {
 	 */
 	String getPackageName();
 	
-	DaoImplementationStrategy getImplementationStrategy();
+	Strategy getStrategy();
 	
 	void close();
 }
