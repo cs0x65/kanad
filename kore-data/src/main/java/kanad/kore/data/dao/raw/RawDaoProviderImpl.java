@@ -184,13 +184,18 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 					LogManager.getLogger().warn("No Thread Local Context available! Building new one...");
 					ThreadBoundPersistentContext<Connection> threadBoundPersistentContext =
 							new ThreadBoundPersistentContext<>();
-					connection = DriverManager.getConnection(connProperties.getProperty(CONN_URL),
-							connProperties.getProperty(CONN_USERNAME),
-							connProperties.getProperty(CONN_PASSWORD));
+					String username = connProperties.getProperty(CONN_USERNAME);
+					String password = connProperties.getProperty(CONN_PASSWORD);
+					if (username != null && password != null)
+						connection = DriverManager.getConnection(connProperties.getProperty(CONN_URL),
+								username,
+								password);
+					else
+						connection = DriverManager.getConnection(connProperties.getProperty(CONN_URL));
 					threadBoundPersistentContext.setPersistentContext(connection);
 					threadLocalManagedContext.set(threadBoundPersistentContext);
 				}else{
-					LogManager.getLogger().info("Leveraging existing Entity Manager from Managed Thread Local " +
+					LogManager.getLogger().info("Leveraging existing Connection from Managed Thread Local " +
 							"Context");
 					connection = threadLocalManagedContext.get().getPersistentContext();
 				}
@@ -202,12 +207,12 @@ public class RawDaoProviderImpl<T> implements RawDaoProvider<T> {
 				//per instance
 				if(existingDao != null){
 					LogManager.getLogger().info("Current strategy is: PER_INSTANCE: Reusing existing " +
-							"DAO/Entity Manager...");
+							"DAO/Connection...");
 					connection = existingDao.get();
 				}else{
 					//No existing DAO passed and additionally, the strategy is per instance.
 					LogManager.getLogger().warn("No existing DAO received; Current strategy is: PER_INSTANCE; " +
-							"one Entity Manager instance per DAO.");
+							"one Connection instance per DAO.");
 					connection = DriverManager.getConnection(connProperties.getProperty(CONN_URL),
 							connProperties.getProperty(CONN_USERNAME),
 							connProperties.getProperty(CONN_PASSWORD));
