@@ -14,7 +14,7 @@ public interface DaoProvider<I, T, D extends Dao<I, ? extends T>> {
 	
 	/**
 	 * 
-	 * @param daoClassname. Please make sure you provide the fully qualified classname if the base package name
+	 * @param daoClassname Please make sure you provide the fully qualified classname if the base package name
 	 * is not set on the underlying Dao provider implementation; otherwise a simple classname suffices.
 	 * @param existingDao an existing instance of the DAO
 	 * @return  the Dao instance for the corresponding class constructed using
